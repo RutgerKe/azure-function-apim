@@ -1,0 +1,36 @@
+openapi: '3.0.2'
+info:
+  title: Example API
+  version: '1.0'
+servers:
+  - url: https://apim-someone-testing-apim.azure-api.net/example
+paths:
+  /getter:
+    description: "This should work most of the time"
+    get:
+      parameters:
+        - name: message
+          schema: 
+            type: string
+          in: query
+          required: true
+      responses:
+        '200':
+          description: OK
+        '422':
+          description: "Somebody messed up. It wasn't us"
+        '500':
+          description: "Uh-oh"
+  /poster:
+    description: "This works nicely when you give a body, I hope"
+    post:
+      requestBody:
+        content: 
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: "Uh-oh"
