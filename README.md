@@ -83,7 +83,7 @@ This simple function will work without installing packages locally first, but th
 
 Right now you should have your API running. Log into the Azure portal, look for your APIM resource, go to subscriptions, click the three dots at the end of each row and pick 'show/hide' keys. Copy a key, and open your favourite request tester (like postman):
 
-The API is now located at https://apim-<yourcollectionname>.azure-api.net/example/poster. We can hit the POST endpoint with a POST request on https://apim-<yourcollectionname>.azure-api.net/example/poster (try adding a body) and the get endpoint with a GET request on https://apim-<yourcollectionname>.azure-api.net/example/getter (try adding a query parameter named `message`)
+The API is now located at `https://apim-<yourcollectionname>.azure-api.net/example/poster`. We can hit the POST endpoint with a POST request on `https://apim-<yourcollectionname>.azure-api.net/example/poster` (try adding a body) and the get endpoint with a GET request on `https://apim-<yourcollectionname>.azure-api.net/example/getter` (try adding a query parameter named `message`)
 
 We can also quickly query with curl: 
 - Set our subscription key `export subkey=<yourkey>`
