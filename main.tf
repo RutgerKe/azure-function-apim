@@ -1,7 +1,7 @@
 provider "azurerm" {
     // Credentials should be set, az login is the easiest
     // other options are described here: https://www.terraform.io/docs/providers/azurerm/index.html
-    version = "=2.8.0"
+    version = "=2.47.0"
     features {}
 }
 
@@ -25,7 +25,7 @@ resource "azurerm_api_management" "example" {
   publisher_name      = "PublisherName"
   publisher_email     = var.adminemail
 
-  sku_name = "Developer_1"
+  sku_name = "Consumption_0"
 }
 
 # Our general API definition, here we could include a nice swagger file or something
@@ -42,45 +42,6 @@ resource "azurerm_api_management_api" "example" {
     content_format = "openapi"
     content_value  = file("api-spec.yml")
   }
-}
-
-# A product, user and subscription to generate keys for a consumer
-resource "azurerm_api_management_product" "example" {
-  product_id            = "test-product"
-  api_management_name   = azurerm_api_management.example.name
-  resource_group_name   = azurerm_resource_group.main.name
-  display_name          = "Test Product"
-  subscription_required = true
-  approval_required     = true
-  published             = true
-  subscriptions_limit   = 1
-}
-
-# Link the product to an api
-resource "azurerm_api_management_product_api" "example" {
-  api_name            = azurerm_api_management_api.example.name
-  product_id          = azurerm_api_management_product.example.product_id
-  api_management_name = azurerm_api_management.example.name
-  resource_group_name = azurerm_resource_group.main.name
-}
-
-resource "azurerm_api_management_user" "example" {
-  user_id             = "exampleuser"
-  api_management_name = azurerm_api_management.example.name
-  resource_group_name = azurerm_resource_group.main.name
-  first_name          = "Example"
-  last_name           = "User"
-  email               = var.clientemail
-  state               = "active"
-}
-
-resource "azurerm_api_management_subscription" "example" {
-  api_management_name = azurerm_api_management.example.name
-  resource_group_name = azurerm_resource_group.main.name
-  user_id             = azurerm_api_management_user.example.id
-  product_id          = azurerm_api_management_product.example.id
-  display_name        = "Client1"
-  state               = "active"
 }
 
 # A seperate backend definition, we need this to set our authorisation code for our azure function
@@ -109,7 +70,7 @@ resource "azurerm_api_management_named_value" "example" {
   resource_group_name = azurerm_resource_group.main.name
   api_management_name = azurerm_api_management.example.name
   display_name        = "func-functionkey"
-  value               = lookup(azurerm_template_deployment.function_keys.outputs, "functionkey")
+  value               = data.azurerm_function_app_host_keys.app_function_key.master_key
   secret              = true
 }
 
@@ -129,38 +90,6 @@ resource "azurerm_api_management_api_policy" "example" {
         </inbound>
     </policies>
   XML
-}
-
-# Because we can't get function keys from terraform
-# We get the functions keys with a workaround
-# Source: https://blog.gripdev.xyz/2019/07/16/terraform-get-azure-function-key/
-resource "azurerm_template_deployment" "function_keys" {
-  name = "funcappkey"
-  parameters = {
-    "functionApp" = azurerm_function_app.func.name
-  }
-  resource_group_name    = azurerm_resource_group.main.name
-  deployment_mode = "Incremental"
-
-  template_body = <<BODY
-  {
-      "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-      "contentVersion": "1.0.0.0",
-      "parameters": {
-          "functionApp": {"type": "string", "defaultValue": ""}
-      },
-      "variables": {
-          "functionAppId": "[resourceId('Microsoft.Web/sites', parameters('functionApp'))]"
-      },
-      "resources": [
-      ],
-      "outputs": {
-          "functionkey": {
-              "type": "string",
-              "value": "[listkeys(concat(variables('functionAppId'), '/host/default'), '2018-11-01').functionKeys.default]"                                                                                }
-      }
-  }
-  BODY
 }
 
 # Below just a generic app service plan and python function setup
@@ -211,4 +140,10 @@ resource "azurerm_function_app" "func" {
   site_config {
     linux_fx_version = "PYTHON|3.7"
   }
+}
+
+# We use the host key in the APIM to authenticate requests
+data "azurerm_function_app_host_keys" "app_function_key" {
+  name                = azurerm_function_app.func.name
+  resource_group_name = azurerm_resource_group.main.name
 }

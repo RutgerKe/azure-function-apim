@@ -15,7 +15,7 @@ cd func && func azure functionapp publish fa-$collectionname-func --python
 
 Main components:
 - [Azure function](https://azure.microsoft.com/en-us/services/functions/): The Microsoft Azure way of offering serverless functions, it supports Python, which we shall be using. Microsoft offers 1 million free executions pers month. It has some limitations (mainly runtime), but for our API which should be quick this doesn't matter at all.
-- [API Managament](https://azure.microsoft.com/en-us/services/api-management/): Microsoft describes it as "Hybrid, multi-cloud management platform for APIs across all environments". We will be using it to create a nice endpoint for our API's and secure it. Note that this thing gets [expensive](https://azure.microsoft.com/en-us/pricing/details/api-management/) when you want more. We will be using the Consompution tier with a million free calls.
+- [API Management](https://azure.microsoft.com/en-us/services/api-management/): Microsoft describes it as "Hybrid, multi-cloud management platform for APIs across all environments". We will be using it to create a nice endpoint for our API's and secure it. Note that this thing gets [expensive](https://azure.microsoft.com/en-us/pricing/details/api-management/) when you want more. We will be using the Consompution tier with a million free calls.
 
 Supporting components:
 - Storage account: This is used to store the code we deploy to our function
@@ -42,8 +42,9 @@ Working API-definition-first we have of course already made a specification, in 
 For this example everything is in `main.tf`, there are comments in the file to explain the purpose of the resources.
 
 Some points of attention:
-- The `Consompution` plan is only implemented in a working way from azurerm [release 2.8.1]
-- There is still no way to get the [function key](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python#authorization-keys) from the terraform object, so there is a workaround at the bottom.
+- The `Consompution` plan is only implemented in a working way since azurerm [release 2.42.0](https://github.com/terraform-providers/terraform-provider-azurerm/blob/v2.42.0/CHANGELOG.md)
+- Since [release 2.27.0](https://github.com/terraform-providers/terraform-provider-azurerm/blob/v2.27.0/CHANGELOG.md) we can get function app keys with `azurerm_function_app_host_keys`, a workaround was implemented before
+- The consumption plan SKU does not allow creating users, which was previously used in this repo. Terraform does [currently not support subscriptions without users](https://github.com/terraform-providers/terraform-provider-azurerm/issues/8923). Workaround: use the portal to make subscriptions and get the key :(
 - All secrets are stored plain text in the state file, save this in a secure location!
 
 ## Python function
